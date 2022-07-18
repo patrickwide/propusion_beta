@@ -1,0 +1,209 @@
+use anchor_lang::prelude::*;
+
+declare_id!("8i4YZYcxNpEZXHDYkhP2Ewv62jZVxvR193H8yb7sxqu1");
+
+#[program]
+pub mod propulsion {
+    use super::*;
+
+    pub fn initialize_platform(
+        ctx: Context<PropulsionPlatform>,
+        user_name: String
+    ) -> Result<()> {
+        let user_data = &mut ctx.accounts.user_data;
+        user_data.user_name = user_name;
+        Ok(())
+    } 
+
+    // add a project to the user account
+    pub fn add_joined_project(
+        ctx: Context<AddJoinedProjects>,    
+        archive_id: String, 
+        user_public_key: Pubkey
+    ) -> Result<()> {
+        let join_project_data = &mut ctx.accounts.joined_projects;
+        
+        if !archive_id.trim().is_empty() {
+            return err!(Errors::CannotAddJoinedProjectError1);
+        }
+
+        join_project_data.user_public_key = user_public_key;
+        join_project_data.archive_id.push(archive_id);
+        join_project_data.number_of_projects += 1;
+
+        Ok(())
+    }
+
+    // read all the projects in the user account data
+    pub fn read_joined_projects(
+        ctx: Context<JoinedProjects>,  
+        user_public_key: Pubkey
+    ) -> Vec<String> {
+        let join_project_data = &mut ctx.account.joined_projects;
+
+        if !join_project_data.user_public_key == user_public_key {
+            return err!(Errors::CannotReadJoinedProjectError1);
+        }
+
+        return join_project_data.archive_id;
+    }
+
+    // pub fn update_joined_project(
+    //     ctx: Context<JoinedProjects>,  
+    //     user_public_key: Pubkey,
+    //     prev_archive_id: String,
+    //     new_archive_id: String
+    // ) -> Result<()> {
+    //     let join_project_data = &mut ctx.account.joined_projects;
+
+    //     if !join_project_data.user_public_key == user_public_key {
+    //         return err!(Errors::CannotUpdateJoinedProjectError1);
+    //     }
+
+    //     let number_of_projects = join_project_data.number_of_projects;
+        
+    //     if !number_of_projects >= 1 {
+    //         return err!(Errors::CannotUpdateJoinedProjectError2);
+    //     }
+
+    //     for i in 0..number_of_projects {
+    //         let mut elem = join_project_data.archive_id[i];
+    //         if elem == prev_archive_id {
+    //             elem = new_archive_id;
+    //             Ok(())
+    //         }
+    //     }
+
+    //     return err!(Errors::CannotUpdateJoinedProjectError3);
+    // }
+
+    // pub fn delete_joined_project(
+    //     ctx: Context<JoinedProjects>,  
+    //     user_public_key: Pubkey,
+    //     archive_id: String
+    // ) -> Result<()> {
+    //     let join_project_data = &mut ctx.account.joined_projects;
+
+    //     if !join_project_data.user_public_key == user_public_key {
+    //         return err!(Errors::CannotDeleteJoinedProjectError1);
+    //     }
+
+    //     for i in 0..number_of_projects {
+    //         let mut elem = join_project_data.archive_id[i];
+    //         if elem == prev_archive_id {
+    //             join_project_data.archive_id.remove(elem);
+    //             Ok(())
+    //         }
+    //     }
+
+    //     return err!(Errors::CannotDeleteJoinedProjectError2);
+    // }
+
+}
+
+#[derive(Accounts)]
+pub struct PropulsionPlatform<'info> {
+    #[account(init, payer = user, space = 9000 )]
+    pub user_data: Account<'info, UserData>,
+    pub joined_projects: Account<'info, JoinedProjects>,
+    // pub created_projects: Account<'info, CreatedProjects>,
+    // pub proposals: Account<'info, Proposals>,
+    // pub projectsTypePreferences: Account<'info, ProjectsTypePreferences>,
+    // pub joinedDeals: Account<'info, JoinedDeals>,
+    // pub created_deals: Account<'info, CreatedDeals>,
+    #[account(mut)]
+    pub user: Signer<'info>,
+    pub system_program: Program<'info, System>,
+}
+
+#[account] // An attribute for a data structure representing a Solana account.
+#[derive(Default)]
+pub struct UserData {
+    user_public_key: Pubkey, // with  #[derive(Default)] we can assign default values
+    user_name: String,
+}
+
+
+#[account] // An attribute for a data structure representing a Solana account.
+#[derive(Default)]
+pub struct JoinedProjects {
+    user_public_key: Pubkey, // with  #[derive(Default)] we can assign default values
+    number_of_projects: u8,
+    archive_id: Vec<String>, 
+}
+
+#[derive(Accounts)]
+pub struct AddJoinedProjects<'info> {
+    #[account(mut)]
+    pub joined_projects: Account<'info, JoinedProjects>
+}
+
+#[derive(Accounts)]
+pub struct ReadJoinedProjects {
+    #[account(mut)]
+
+}
+
+// #[account] // An attribute for a data structure representing a Solana account.
+// #[derive(Default)]
+// pub struct CreatedProjects<'info> {
+//     user_public_key: Pubkey, // with  #[derive(Default)] we can assign default values
+//     number_of_projects: u8,
+//     archive_id: Vec<String>, 
+// }
+
+// #[account] // An attribute for a data structure representing a Solana account.
+// #[derive(Default)]
+// pub struct Proposals<'info> {
+//     user_public_key: Pubkey, // with  #[derive(Default)] we can assign default values
+//     number_of_proposals: u8,
+//     archive_id: Vec<String>, 
+// }
+
+// #[account] // An attribute for a data structure representing a Solana account.
+// #[derive(Default)]
+// pub struct ProjectsTypePreferences<'info> {
+//     user_public_key: Pubkey, // with  #[derive(Default)] we can assign default values
+//     number_of_preferences: u8,
+//     archive_id: Vec<String>, 
+// }
+
+// #[account] // An attribute for a data structure representing a Solana account.
+// #[derive(Default)]
+// pub struct JoinedDeals<'info> {
+//     user_public_key: Pubkey, // with  #[derive(Default)] we can assign default values
+//     number_of_deals: u8,
+//     archive_id: Vec<String>, 
+// }
+
+// #[account] // An attribute for a data structure representing a Solana account.
+// #[derive(Default)]
+// pub struct CreatedDeals<'info> {
+//     user_public_key: Pubkey, // with  #[derive(Default)] we can assign default values
+//     number_of_deals: u8,
+//     archive_id: Vec<String>, 
+// }
+
+// errors
+#[error_code]
+pub enum Errors {
+    #[msg("Error occurred while processing data : Project Archive id can't be blank")]
+    CannotAddJoinedProjectError1,
+
+    #[msg("Error occurred while reading data : user public key does not match")]
+    CannotReadJoinedProjectError1,
+    
+    #[msg("Error occurred while updating data : user public key does not match")]
+    CannotUpdateJoinedProjectError1,
+
+    #[msg("Error occurred while updating data : Project Archive id does not exist")]
+    CannotUpdateJoinedProjectError3,
+
+    #[msg("Error occurred while deleting data : user public key does not match")]
+    CannotDeleteJoinedProjectError1,
+
+    #[msg("Error occurred while deleting data : Project Archive id does not exist")]
+    CannotDeleteJoinedProjectError2,
+}
+
+
